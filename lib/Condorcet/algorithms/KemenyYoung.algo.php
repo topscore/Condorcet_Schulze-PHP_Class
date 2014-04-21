@@ -90,19 +90,19 @@ class KemenyYoung
 
 			for ($i = 1 ; $i <= ($arrangements / $this->_CandidatesCount) ; $i++)
 			{
-				$this->_PossibleRanking[$i_arrangement][1] = $CandidateId ;
+				// $this->_PossibleRanking[$i_arrangement][1] = $CandidateId ;
 
-				for ($ir = 2 ; $ir <= $this->_CandidatesCount ; $ir++ )
+				for ($ir = 1 ; $ir <= $this->_CandidatesCount ; $ir++ )
 				{
 					$this->_PossibleRanking[$i_arrangement][$ir] = null ;
 				}
 
 				$i_arrangement++ ;
 			}
-
-			// Populate the nexts
-			$this->rPossibleRanking($start, $i_arrangement) ;
 		}
+
+		// Populate the nexts
+		$this->rPossibleRanking(1, $arrangements) ;
 
 		// Tested the integrity of the calculation of possible classifications
 		/*
@@ -131,7 +131,7 @@ class KemenyYoung
 			return $result ;
 		}
 
-		protected function rPossibleRanking ($start, $end, $rank = 2)
+		protected function rPossibleRanking ($start, $end, $rank = 1)
 		{
 			$nbrCandidates = $this->_CandidatesCount - ($rank - 1) ;
 			$each = $this->calcPermutation($nbrCandidates) / $nbrCandidates ;
@@ -141,7 +141,7 @@ class KemenyYoung
 				$do = 0 ;
 
 				// Parcours des possibles
-				for ($i = $start ; $i < $end ; $i++)
+				for ($i = $start ; $i <= $end ; $i++)
 				{
 					if (	$do < $each &&
 							is_null($this->_PossibleRanking[$i][$rank]) &&
@@ -159,7 +159,7 @@ class KemenyYoung
 			{
 				$rank++ ;
 
-				for ($partielEnd = $start + $each ; $partielEnd <= $end ; $partielEnd += $each)
+				for ($partielEnd = $start + $each - 1 ; $partielEnd <= $end ; $partielEnd += $each)
 				{
 					$this->rPossibleRanking($start, $partielEnd, $rank);
 				}
