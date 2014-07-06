@@ -1,11 +1,15 @@
 <?php
-
-// Inclus les dépendances
 ini_set('xdebug.var_display_max_depth', -1);
 ini_set('xdebug.var_display_max_children', -1);
 ini_set('xdebug.var_display_max_data', -1);
 ini_set('display_errors', 1);
 error_reporting(E_ALL); 
+
+// Exeptions Handler
+function exception_handler($exception) {
+  trigger_error($exception, E_USER_ERROR);
+}
+set_exception_handler('exception_handler');
 
 
 use Condorcet\Condorcet ;
@@ -38,9 +42,13 @@ define('TEST_NAME', 'Condorcet Bonus Example');
  </head>
  <body>
 
+	<header style="text-align:center;">
+		<img src="../condorcet-logo.png" alt="Condorcet Class" style="width:15%;">
+	</header>
+
 	<h1><?php echo TEST_NAME ;?></h1>
 	
-	<em style="font-weight:bold;"><a href="https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class" target="_blank">Condorcet Class</a> version : <?php echo $calculator->getObjectVersion(); ?></em><br>
+	<em style="font-weight:bold;"><a href="https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class" target="_blank">Condorcet Class</a> version : <?php echo $calculator->getClassVersion(); ?></em><br>
 
 	<em>
 		Number of Candidates : 
@@ -52,9 +60,14 @@ define('TEST_NAME', 'Condorcet Bonus Example');
 
 	<h2>Candidates list :</h2>
 
-	<pre>
-	<?php print_r($calculator->getCandidatesList()); ?>
-	</pre>
+	<ul>
+	<?php 
+	foreach ($calculator->getCandidatesList() as $candidatName)
+	{ 
+		echo '<li>'.$candidatName.'</li>' ;
+	}
+	?>
+	</ul>
 
 
 	<h2>Registered votes details :</h2>
@@ -81,7 +94,17 @@ define('TEST_NAME', 'Condorcet Bonus Example');
 	}
 ?>
 
-<hr style="clear:both;">
+<br><hr style="clear:both;">
+
+<h2>Get pairwise :</h2>
+
+	 <pre>
+	<?php var_dump($calculator->getPairwise()); ?>
+	 </pre> 
+	<br>
+	<em style="color:green;">computed in <?php echo $calculator->getLastTimer() ; ?> second(s).</em>
+
+<br><br><hr style="clear:both;">
 
 	<h2>Winner by <a target="blank" href="http://en.wikipedia.org/wiki/Condorcet_method">natural Condorcet</a> :</h2>
 
@@ -219,12 +242,17 @@ define('TEST_NAME', 'Condorcet Bonus Example');
 ?>
 <div style="clear:both;"></div>
 
+	<h3>Get a ranking without "custom_tag_One" & "custom_tag_Two" tags and display Kemeny-Young result but don't delete it</h3>
 
-	<h3>Delete vote with "custom_tag_Two" & "custom_tag_Two" tags and display Kemeny-Young  result</h3> <?php // you can also delete vote without this tag, read the doc ( tips: removeVote('custom_tag_One', false) ) ?>
+	 <pre>
+	<?php var_dump($calculator->getResult('KemenyYoung', null, array('custom_tag_One', 'custom_tag_Two'), false)); ?>
+	 </pre>
+<div style="clear:both;"></div>
+
+	<h3>Delete vote with "custom_tag_One" & "custom_tag_Two" tags and display Kemeny-Young  result</h3> <?php // you can also delete vote without this tag, read the doc ( tips: removeVote('custom_tag_One', false) ) ?>
 
 	<?php 
-		$calculator->removeVote('custom_tag_One') ;
-		$calculator->removeVote('custom_tag_Two') ;
+		$calculator->removeVote(array('custom_tag_One', 'custom_tag_Two')) ;
 	?>
 
 

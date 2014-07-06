@@ -1,30 +1,39 @@
+<p align="center">
+  <img src="condorcet-logo.png" alt="Condorcet Class" width="40%">
+</p>   
+
 Condorcet Class for PHP
 ===========================
 
 A PHP class implementing the Condorcet voting system and other Condorcet methods like the Schulze method.  
 _This class is not designed for high performances, very high fiability exigence, massive voters or candidates_   
 
-**Create by :** Julien Boudry (born 22/10/1988 - France) [@JulienBoudry](https://twitter.com/JulienBoudry)     
-**License :** MIT _(read de LICENSE file at the root folder)_  
+**Create by :** Julien Boudry (born 22/10/1988 - France) [@JulienBoudry](https://twitter.com/JulienBoudry) - _([complete list of contributors](https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class/graphs/contributors))_     
+**License :** MIT _(read de LICENSE file at the root folder)_  Including code, examples, logo and documentation     
 As a courtesy, I will thank you to inform me about your project wearing this code, produced with love and selflessness. **You can also offer me a bottle of good wine**.   
 **Or finance my studies:** *1FavAXcAU5rNkfDDTgMs4xx1FNzDztwYV6*
 
 
 ### Project State
-To date, the 0.10 is a stable version. Since version 0.9, an important work of code review and testing was conducted by the creator, but **external testers are more than welcome**.   
+To date, we have a stable version. Since version 0.9, an important work of code review and testing was conducted by the creator, but **external testers are more than welcome**.   
 
 - To date, the library is used by [Gustav Mahler blind listening test](http://classik.forumactif.com/t7244-ecoute-comparee-mahler-2e-symphonie-la-suite).   
 http://gilles78.artisanat-furieux.net/Condorcet/
 
 #### Specifications and standards  
-**Stable Version : 0.10**  
-**PHP Requirement:** PHP 5.4 with Ctype and MB_String common extensions  
+**Stable Version : 0.13**  
+**PHP Requirement:** PHP 5.4.3 with Ctype, MB_String, Json common extensions. _(tested up to PHP 5.6)_
 
 **Autoloading:** This project is consistent with the standard-PSR 0 and can be loaded easily and without modification in most frameworks. Namespace \Condorcet is used. 
 The literature also provides easy example of free implementation with or without autoloader.
 
 **Coding standards:** The code is very close to the respect of PSR-1 (lacks only the naming of methods), and freely influenced by PSR-2 when it is not unnecessarily authoritarian.  
 
+
+#### Related projects
+* [Condorcet API](https://github.com/julien-boudry/Condorcet_API) Very basic and simple http API for Condorcet class (json or text i/o)
+* [Mahler-S2-BlindTest-Condorcet
+](https://github.com/julien-boudry/Mahler-S2-BlindTest-Condorcet) (french interface) Web wrapper to compute and show result for classical music blind challenge with the Condorcet Class full potential (can also be used and adapted for any elections). Look like the examples provided here, but better.    
 
 ---------------------------------------
 
@@ -44,7 +53,7 @@ The literature also provides easy example of free implementation with or without
 
 * **KemenyYoung** http://en.wikipedia.org/wiki/Kemeny-Young_method   
 *Neither perfect nor quick, however this implementation is operating normally. You are invited to read the corresponding Github issue, and if you are able to comment on issues in Github.   
-Because this implementation uses no heuristic means, it is deliberately restrained to vote involving no more than 5 candidates; however, you can easily bypass this limitation by using ```namespace\KemenyYoung::setMaxCandidates(6);```, but your processor could work a long time when exceeding six candidates. In contrast, the number of voters do not impact the calculation time significantly.*
+Because this implementation uses no heuristic means, it is deliberately restrained to vote involving no more than 5 candidates; however, you can easily bypass this limitation by using ```namespace\KemenyYoung::setMaxCandidates(6);```, but your processor could work a long time when exceeding five candidates. In contrast, the number of voters do not impact the calculation time significantly.*
 
 * **Minimax Family** http://en.wikipedia.org/wiki/Minimax_Condorcet
     * **Minimax_Winning** *(Does not satisfy the Condorcet loser criterion)*  
@@ -58,7 +67,7 @@ Because this implementation uses no heuristic means, it is deliberately restrain
     * **Schulze_Margin**
     * **Schulze_Ratio**
 
-_The name of the above methods must be observed when you make calls, case sensitive._
+**The name of the above methods must be observed when you make calls, case sensitive.**   
 
 #### Add new one?	
 This class is designed to be easily extensible with new algorithms. A modular schematic is already used for all algorithms provided, so you can easily help, do not forget to make a pull request!  
@@ -74,7 +83,7 @@ This class is designed to be easily extensible with new algorithms. A modular sc
 
 ---------------------------------------
 ## How to use it?
-Soon you will find a complete example.php. The most important methods are listed bellow.  
+You will find comprehensive examples in the example folder, read them! The following documentation is trying to be as complete as possible. Do not hesitate to ask questions.
 We encourage you to read the code, and help to improve inline documentation!
 
 1. [Install it](#install-it)
@@ -82,7 +91,8 @@ We encourage you to read the code, and help to improve inline documentation!
 3. [1: Manage Candidates](#1-manage-candidates)
 4. [2: Start voting](#2-start-voting)
 5. [3: Get results & Stats](#3-get-results--stats)
-6. [Customize the code : Add new algorithm(s)](#customize-the-code--add-new-algorithms-)
+6. [Exceptions codes](#exceptions-code)
+7. [Customize the code : Add new algorithm(s)](#customize-the-code-add-new-algorithms-)
 
 ---------------------------------------
 ### Install it
@@ -142,7 +152,8 @@ Look https://packagist.org/packages/julien-boudry/condorcet
 
 #### Change the object default method if needed
 ```php
-$condorcet->setMethod('Schulze') ; // Argument : A supported method  
+$condorcet->setMethod('Schulze') ; // Argument : A supported method. Return the string name of new default method for this object (
+or forced method after the class if fonctionnalitée enabled). Throw an exception on error.
 ```
 
 #### Change the class default method if needed
@@ -177,7 +188,16 @@ $condorcet->resetAll ();
 ---------------------------------------
 ### 1: Manage Candidates
 
-#### Registering
+### Registering
+
+#### Regular
+
+```php
+addCandidate ( [mixed $name = automatic] ) 
+```
+**name :** Alphanumeric string or int. Your candidate name will be trim()    
+
+**Return value :** The new candidate name (your or automatic one). Throw an exception on error (existing candidate...)    
 
 Enter (or not) a Candidate Name 
 
@@ -188,14 +208,52 @@ $condorcet->addCandidate() ; // Empty argument will return an automatic candidat
 $condorcet->addCandidate(2) ; // A numeric argument  
 ```
 
+#### Add multiple candidates from string or text file
 
-#### Removing
+##### Syntax
+```
+Candidate1
+Candidate2 # You can add optionnal comments
+Candidate3 ; Candidate4 # Or in the same line separated by ;, with or without space (will be trim)
+Candidate5
+``` 
+
+##### Method
+```php
+$condorcet->parseCandidates('data/candidates.txt'); // Path to text file. Absolute or relative.
+$condorcet->parseCandidates($my_big_string); // Just my big string.
+```
+
+#### Add multiple candidates from Json
+
+##### Syntax
+```php
+json_encode( array(
+	'Candidate1',
+	'Candidate2'
+) );
+``` 
+
+##### Method
+```php
+$condorcet->jsonCandidates($my_big_string);
+```
+
+### Removing
+```php
+removeCandidate ( mixed $name = automatic )
+```
+**name :** Alphanumeric string or int.   
+
+**Return value :** True on success. Throw an exception if candidate name can't be found or if the vote has began.
+
+
 ```php
 $condorcet->removeCandidate('Wagner') ;
 ```
 
 
-#### Verify the Candidates list
+### Verify the Candidates list
 ```php
 $condorcet->getCandidatesList(); // Will return an array with Candidate Name as value.
 ```
@@ -209,6 +267,15 @@ _Note: All votes are adjusted to estimate all candidates. The pairwise is calcul
 
 #### Add a vote
 _Note: You can add new votes after the results have already been given_  
+
+
+```php
+// addVote ( mixed $data [, mixed $tag = null] )
+```
+**data :** The vote data  
+**tag :** add tag(s) to this vote for further actions
+
+
 
 ##### With an array
 ```php
@@ -248,29 +315,108 @@ $vote = 'A>BC>D' ; // It's not correct
 *The last rank is optionnal too, it will be automatically deducted.*  
 
 
-#### Add a tag
+##### Add a tag
 You can add the same or different tag for each vote:  
 ```php
 $condorcet->addVote($vote, 'Charlie') ; // Please note that a single tag is always created for each vote. 
 $condorcet->addVote($vote, 'Charlie,Claude') ; // You can also add multiple tags, separated by commas. 
+```   
+
+
+#### Add multiple votes from string or text file
+Once your list of candidates previously recorded. You can parse a text file or as a PHP string character to record a large number of votes at once.   
+
+*You can simultaneously combine this method with traditional PHP calls above.*  
+
+##### Syntax
+```
+tag1,tag2,tag3[...] || A>B=D>C # A comment at the end of the line prefixed by '#'. Never use ';' in comment!
+Titan,CoteBoeuf || A>B=D>C # Tags at first, vote at second, separated by '||'
+A>C>D>B # Line break to start a new vote. Tags are optionals. View above for vote syntax.
+tag1,tag2,tag3 || A>B=D>C * 5 # This vote and his tag will be register 5 times
+   tag1  ,  tag2, tag3     ||    A>B=D>C*2        # Working too.
+C>D>B*8;A=D>B;Julien,Christelle||A>C>D>B*4;D=B=C>A # Alternatively, you can replace the line break by a semicolon.
+``` 
+
+##### Method
+```php
+$condorcet->parseVotes('data/vote42.txt'); // Path to text file. Absolute or relative.
+$condorcet->parseVotes($my_big_string); // Just my big string.
 ```
 
+#### Add multiple votes from Json
 
+##### Syntax
+```php
+$json_votes = json_encode( array(
+	array('vote' => 'A>B=D>C', 'tag' => 'ben,jerry'),
+	array('vote' => array('D', 'B,A', 'C'), 'tag' => array('bela','bartok'), 'multi' => 5),
+	array('vote' => array('A', array('B','C'), 'D'))
+) );
+``` 
+
+In the previous example, all parameters are optional exept vote.
+* 'multi' is used to record N times the vote.   
+* 'tag' is used in the same way as addVote ()  
+* 'vote' is used in the same way as addVote ()   
+
+##### Method
+```php
+$condorcet->jsonVotes($json_votes);
+```
+
+**Anti-flood :**
+
+Be applied and reset each call parseVotes() or jsonVotes()   
+
+```php
+Condorcet::setMaxParseIteration(500); // Will generate an exception and stop after 500 registered vote by call.
+Condorcet::setMaxParseIteration(null); // No limit (default mode)
+```  
 
 #### Verify the registered votes list
 ```php
-$condorcet->getVotesList (); // Will return an array where key is the internal numeric vote_id and value an other array like your input.   
-$condorcet->getVotesList ('Charlie'); // Will return an array where each vote with this tag.   
-$condorcet->getVotesList ('Charlie', false); // Will return an array where each vote without this tag.   
+getVotesList ( [mixed $tag = null, bool $with = true] )
+```
+**tag :** List of tags   
+**with :** With or without one a this tag(s)   
 
+```php
+$condorcet->getVotesList (); // Will return an array where key is the internal numeric vote_id and value an other array like your input.   
+$condorcet->getVotesList ('Charlie'); // Will return an array with each vote with this tag.   
+$condorcet->getVotesList ('Charlie', false); // Will return an array where each vote without this tag.   
+$condorcet->getVotesList ('Charlie,Julien'); // With this tag OR this tag   
+$condorcet->getVotesList (array('Julien', 'Charlie'), true); // Or do it like this   
+$condorcet->getVotesList (array('Julien', 'Charlie'), false); // Without this tag AND without this tag ...   
+```
+
+#### Count registered votes
+
+```php
+countVotes ( [mixed $tag = null, bool $with = true] )
+```
+**tag :** List of tags   
+**with :** With or without one a this tag(s)    
+
+```php
 $condorcet->countVotes (); // Return a numeric value about the number of registered votes.  
+$condorcet->countVotes ('Julien,Charlie'); // Count vote with this tag OR this tag.   
+$condorcet->countVotes (array('Julien','Charlie'), false); // Count vote without this tag AND without this tag.   
 ```
 
 
 #### Remove vote
 ```php
+removeVote( mixed $tag [, bool $with = true] )
+```
+**tag :** List of tags   
+**with :** With or without one a this tag(s)    
+
+```php
 $condorcet->removeVote('Charlie') ; // Remove vote(s) with tag Charlie
 $condorcet->removeVote('Charlie', false) ; // Remove votes without tag Charlie
+$condorcet->removeVote('Charlie, Julien', false) ; // Remove votes without tag Charlie AND without tag Julien.
+$condorcet->removeVote(array('Julien','Charlie')) ; // Remove votes with tag Charlie OR with tag Julien.
 ```
 
 _Note: You can remove a vote after the results have already been given._  
@@ -281,11 +427,18 @@ _Note: You can remove a vote after the results have already been given._
 When you have finished to process vote, you would like to have the results.
 
 #### Just get the natural Condorcet Winner
+```php
+getWinner ( [mixed $method = false] )
+getLoser ( [mixed $method = false] )
+```
+**method :** String name of an available advanced Condorcet method. True for default method.
+
+**Return value :** Candidate name, null if there are no aviable winner or loser. Throw an exception on error.
 
 ##### Regular
 ```php
-$condorcet->getWinner() ; // Will return a string with the Candidate name
-$condorcet->getLoser() ; // Will return a string with the Candidate name
+$condorcet->getWinner() ; // Will return a string with the Condorcet Winner candidate name
+$condorcet->getLoser() ; // Will return a string with the Condorcet looser candidate name
 ```
 
 
@@ -305,9 +458,24 @@ Will return a string with the Candidate Name or many separated by commas
 
 #### Get a complete ranking from advanced methods
 ```php
+getResult ( [mixed $method = false , array $extra_param = null, mixed $tag , bool $with = true] )
+```
+**method :** String name of an available advanced Condorcet method. True for default method.
+**extra_param :** Specific for each method, if needed.
+**tag :** Use a special set of votes.  
+**with :** With or without one a this tag(s)   
+
+**Return value :** Throw an exception on error, else a nice array for ranking.
+
+__Warning : Using getResult() with tags filter don't use cache engin and computing each time you call it, prefer clone object and remove votes if you need it.__
+
+
+```php
 $condorcet->getResult() ; // Set of results with ranking from the default method. (Class Default: Schulze)  
 $condorcet->getResult('Schulze') ; // Get the result for a valid method.
 $condorcet->getResult( 'KemenyYoung', array('noConflict' => true) ) ; // Sometimes (actually only this one for KemenyYoung), you can use an array for some algorithm configuration. See details above.
+$condorcet->getResult(true, null, 'Julien,Beethoven') ; // Use the default ranking method, no special parameters to it, but only compute with vote get tag 'Julien' or tag 'Beethoven'.
+$condorcet->getResult('Copeland', null, 'Julien,Beethoven', false) ; // Use the Copeland methodd, no special parameters to it, but only compute with vote without tag 'Julien' and without tag 'Beethoven'.
 ```
 
 
@@ -339,7 +507,68 @@ else
 {
 	// $test is your habitual result ;
 }
-```    
+```   
+
+#### Timer benchmarking 
+These two methods can be useful in estimating the computation time of each call to the algorithm. It is not a calculation of all operations carried out by the library, but those specifically related to modules of algorithms for calculating election results.
+
+#### Last timer
+```php
+getLastTimer (bool $float = false)
+```
+**float :** If true, return a float number. Else, it return number_format($result, 5).
+
+**Return value :** Returns the CPU time measured during the last arithmetic operation results with getResult() getWinner() getLoser() OR the Pairwise with getPairwise().    
+
+
+```php
+$calculator->getPairwise();
+$calculator->getLastTimer(); // Return the pairwise computation time ONLY if call before getResult(), getWinner(), getLoser(). Besause, cache system skip operation next time exept if there are new votes.
+
+$calculator->getResult('RankedPairs');
+$calculator->getLastTimer(); // Return 0.00112 (string)
+$calculator->getResult('RankedPairs');
+$calculator->getLastTimer(); // Return 0.00003 . See the cache system working!
+$calculator->getResult('KemenyYoung');
+$calculator->getLastTimer(true); // Return 0.14926002 (float) . KemenyYoung can be really slow....
+$calculator->getResult('Copeland');
+$calculator->getLastTimer(true); // Return 0.00010030 (float) . But Copeland is really fast!
+```
+
+#### Global timer
+```php
+getGlobalTimer (bool $float = false)
+```
+**float :** If true, return a float number. Else, it return number_format($result, 5).
+
+**Return value :** Returns the CPU time measured in the overall operations of calculation results with getResult () getWinner () getLoser () AND the Pairwise. Since the creation of the object.    
+
+
+```php
+$calculator->getResult('RankedPairs');
+$calculator->getResult('KemenyYoung');
+$calculator->getResult('Copeland');
+$calculator->getLastTimer(true); // Return 0.02600050 (float) . Time calculation, including that of the Pairwise
+```
+
+
+---------------------------------------
+### Exceptions code
+	[1] = 'Bad candidate format';
+	[2] = 'The voting process has already started';
+	[3] = 'This candidate ID is already registered';
+	[4] = 'This candidate ID do not exist';
+	[5] = 'Bad vote format';
+	[6] = 'You need to specify votes before results';
+	[7] = 'Your Candidate ID is too long > ' . namespace\Condorcet::MAX_LENGTH_CANDIDATE_ID;
+	[8] = 'This method do not exist';
+	[9] = 'The algo class you want has not been defined';
+	[10] = 'The algo class you want is not correct';
+	[11] = 'You try to unserialize an object version older than your actual Class version. This is a problematic thing';
+	[12] = 'You have exceeded the number of votes allowed for this method.';
+	[13] = 'Formatting error: You do not multiply by a number!';
+	[14] = 'parseVote() must take a string (raw or path) as argument';
+	[15] = 'Input must be valid Json format';
 
 ---------------------------------------
 ### Customize the code: Add new algorithm(s) <a name="newAlgo"></a>  

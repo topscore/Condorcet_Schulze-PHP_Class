@@ -2,7 +2,7 @@
 /*
 	Condorcet PHP Class, with Schulze Methods and others !
 
-	Version : 0.10
+	Version : 0.13
 
 	By Julien Boudry - MIT LICENSE (Please read LICENSE.txt)
 	https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class
@@ -28,19 +28,34 @@ class Condorcet
 /////////// CLASS ///////////
 
 
-	const VERSION = '0.10' ;
+	const VERSION = '0.13' ;
+	const ENV = 'STABLE' ;
 	const MAX_LENGTH_CANDIDATE_ID = 30 ; // Max length for candidate identifiant string
 
 	protected static $_classMethod	= null ;
 	protected static $_authMethods	= '' ;
-
 	protected static $_forceMethod	= false ;
+	protected static $_max_parse_iteration = null ;
 
 	// Return library version numer
-	public static function getClassVersion ()
+	public static function getClassVersion ($dev_infos = true)
 	{
-		return self::VERSION ;
+		return ($dev_infos && self::ENV !== 'DEV') ? self::VERSION : self::ENV . ' - '. self::VERSION ;
 	}
+
+
+	// Change max parse iteration
+	public static function setMaxParseIteration ($value)
+	{
+		if (is_int($value) || $value === null)
+		{
+			self::$_max_parse_iteration = $value ;
+			return self::$_max_parse_iteration ;
+		}
+		else
+			{ return false ; }
+	}
+
 
 	// Return an array with auth methods
 	public static function getAuthMethods ()
@@ -49,6 +64,7 @@ class Condorcet
 
 		return $auth ;
 	}
+
 
 	// Return the Class default method
 	public static function getClassDefaultMethod ()
@@ -129,19 +145,18 @@ class Condorcet
 		return true ;
 	}
 
+
 		// Check if the class Algo. exist and ready to be used
 		protected static function testAlgos ($algos)
 		{
 			if ( !class_exists(__NAMESPACE__.'\\'.$algos, false) )
 			{				
-				self::error(9) ;
-				return false ;
+				throw new namespace\CondorcetException(9) ;
 			}
 
 			if ( !in_array(__NAMESPACE__.'\\'.'Condorcet_Algo', class_implements(__NAMESPACE__.'\\'.$algos), false) )
 			{
-				self::error(10) ;
-				return false ;
+				throw new namespace\CondorcetException(10) ;
 			}
 
 			return true ;
@@ -182,38 +197,16 @@ class Condorcet
 			}
 
 
-	public static function error ($code, $infos = null, $level = E_USER_WARNING)
+	// Check JSON format
+	public static function isJson ($string)
 	{
-		$error[1] = array('text'=>'Bad candidate format', 'level'=>E_USER_WARNING) ;
-		$error[2] = array('text'=>'The voting process has already started', 'level'=>E_USER_WARNING) ;
-		$error[3] = array('text'=>'This candidate ID is already registered', 'level'=>E_USER_NOTICE) ;
-		$error[4] = array('text'=> 'This candidate ID do not exist', 'level'=>E_USER_WARNING) ;
-		$error[5] = array('text'=>'Bad vote format', 'level'=>E_USER_WARNING) ;
-		$error[6] = array('text'=>'You need to specify votes before results', 'level'=>E_USER_ERROR) ;
-		$error[7] = array('text'=>'Your Candidate ID is too long > '.self::MAX_LENGTH_CANDIDATE_ID, 'level'=>E_USER_WARNING) ;
-		$error[8] = array('text'=>'This method do not exist', 'level'=>E_USER_ERROR) ;
-		$error[9] = array('text'=>'The algo class you want has not been defined', 'level'=>E_USER_ERROR) ;
-		$error[10] = array('text'=>'The algo class you want is not correct', 'level'=>E_USER_ERROR) ;
-		$error[11] = array('text'=>'You try to unserialize an object version older than your actual Class version. This is a problematic thing', 'level'=>E_USER_WARNING) ;
+		// try to decode string
+		json_decode($string);
 
-		
-		if ( array_key_exists($code, $error) )
-		{
-			trigger_error( $error[$code]['text'].' : '.$infos, $error[$code]['level'] );
-		}
-		else
-		{
-			if (!is_null($infos))
-			{
-				trigger_error( $infos, $level );
-			}
-			else
-			{
-				trigger_error( 'Mysterious Error', $level );
-			}
-		}
+		// check if error occured
+		$isValid = json_last_error() === JSON_ERROR_NONE;
 
-		return false ;
+		return $isValid;
 	}
 
 
@@ -232,6 +225,8 @@ class Condorcet
 	protected $_CandidatesCount = 0 ;
 	protected $_nextVoteTag = 0 ;
 	protected $_objectVersion ;
+	protected $_globalTimer = 0.0 ;
+	protected $_lastTimer = 0.0 ;
 
 	// Result
 	protected $_Pairwise ;
@@ -274,9 +269,9 @@ class Condorcet
 
 	public function __wakeup ()
 	{
-		if ( version_compare($this->getObjectVersion(),self::getClassVersion(),'<') )
+		if ( version_compare($this->getObjectVersion(),self::getClassVersion(false),'<') )
 		{
-			return self::error(11, 'Your object version is '.$this->getObjectVersion().' but the class engine version is '.self::getClassVersion());
+			throw new namespace\CondorcetException(11, 'Your object version is '.$this->getObjectVersion().' but the class engine version is '.self::getClassVersion());
 		}
 
 		if ($this->_State > 2) 
@@ -311,9 +306,10 @@ class Condorcet
 
 							'object_Method'		=> $this->getMethod(),
 							'class_default_Method'	=> self::$_classMethod,
-							'force_classMethod'=> self::$_forceMethod,
+							'is_ClassForceMethod'=> self::$_forceMethod,
 
 							'class_authMethods'=> self::getAuthMethods(),
+							'class_MaxParseIterations'=> self::$_max_parse_iteration,
 
 							'state'		=> $this->_State
 						);
@@ -344,6 +340,63 @@ class Condorcet
 	}
 
 
+	// Generic action before parsing data from string input
+	protected function prepareParse ($input, $allowFile)
+	{
+		// Input must be a string
+		if (!is_string($input))
+			{ throw new namespace\CondorcetException(14); }
+
+		// Is string or is file ?
+		if ($allowFile === true && is_file($input))
+		{
+			$input = file_get_contents($input);
+		}
+
+		// Line
+		$input = preg_replace("(\r\n|\n|\r)",';',$input);
+		$input = explode(';', $input);
+
+		// Delete comments
+		foreach ($input as &$line)
+		{
+			// Trim
+			$line = trim($line);
+
+			// Delete comments
+			$is_comment = strpos($line, '#') ;
+			if ($is_comment !== false)
+			{
+				$line = substr($line, 0, $is_comment) ;
+			}
+		}
+
+		return $input ;
+	}
+
+
+	protected function prepareJson ($input)
+	{
+		if (!self::isJson($input))
+			{ throw new namespace\CondorcetException(15); }
+
+		return json_decode($input, true);
+	}
+
+
+	protected function setTimer ($timer)
+	{
+		$this->_lastTimer = microtime(true) - $timer ;
+		$this->_globalTimer += $this->_lastTimer ;
+	}
+
+	public function getGlobalTimer ($float = false)
+		{ return ($float) ? $this->_globalTimer : number_format($this->_globalTimer, 5) ; }
+
+	public function getLastTimer ($float = false)
+		{ return ($float) ? $this->_lastTimer : number_format($this->_lastTimer, 5) ; }
+
+
 
 /////////// CANDIDATES ///////////
 
@@ -352,13 +405,11 @@ class Condorcet
 	public function addCandidate ($candidate_id = null)
 	{
 		// only if the vote has not started
-		if ( $this->_State > 1 ) { return self::error(2) ; }
+		if ( $this->_State > 1 ) { throw new namespace\CondorcetException(2) ; }
 		
 		// Filter
-		if ( !is_null($candidate_id) && !ctype_alnum($candidate_id) && !is_int($candidate_id) )
-			{ return self::error(1, $candidate_id) ; }
-		if ( mb_strlen($candidate_id) > self::MAX_LENGTH_CANDIDATE_ID || is_bool($candidate_id) )
-			{ return self::error(1, $candidate_id) ; }
+		if ( is_bool($candidate_id) || is_array($candidate_id) || is_object($candidate_id) )
+			{ throw new namespace\CondorcetException(1, $candidate_id) ; }
 
 		
 		// Process
@@ -378,6 +429,11 @@ class Condorcet
 		{
 			$candidate_id = trim($candidate_id);
 
+			if ( mb_strlen($candidate_id) > self::MAX_LENGTH_CANDIDATE_ID || is_bool($candidate_id) )
+				{ throw new namespace\CondorcetException(1, $candidate_id) ; }
+
+				///
+
 			if ( $this->try_addCandidate($candidate_id) )
 			{
 				$this->_Candidates[] = $candidate_id ;
@@ -387,7 +443,7 @@ class Condorcet
 			}
 			else
 			{
-				return self::error(3,$candidate_id) ;
+				throw new namespace\CondorcetException(3,$candidate_id) ;
 			}
 		}
 	}
@@ -402,7 +458,7 @@ class Condorcet
 	public function removeCandidate ($list)
 	{
 		// only if the vote has not started
-		if ( $this->_State > 1 ) { return self::error(2) ; }
+		if ( $this->_State > 1 ) { throw new namespace\CondorcetException(2) ; }
 
 		
 		if ( !is_array($list) )
@@ -417,7 +473,7 @@ class Condorcet
 			$candidate_key = $this->getCandidateKey($candidate_id) ;
 
 			if ( $candidate_key === false )
-				{ return self::error(4,$candidate_id) ; }
+				{ throw new namespace\CondorcetException(4,$candidate_id) ; }
 
 			$candidate_id = $candidate_key ;
 		}
@@ -429,6 +485,44 @@ class Condorcet
 		}
 
 		return true ;
+	}
+
+
+	public function jsonCandidates ($input)
+	{
+		$input = $this->prepareJson($input);
+		if ($input === false) { return $input ; }
+
+			//////
+
+		$count = 0 ;
+		foreach ($input as $candidate)
+		{
+			if ($this->addCandidate($candidate))
+				{ $count++; }
+		}
+
+		return $count ;
+	}
+
+
+	public function parseCandidates ($input, $allowFile = true)
+	{
+		$input = $this->prepareParse($input, $allowFile) ;
+		if ($input === false) { return $input ; }
+
+		$ite = 0 ;
+		foreach ($input as $line)
+		{
+			// Empty Line
+			if (empty($line)) { continue ; }
+
+			// addCandidate
+			if ($this->addCandidate($line))
+				{ $ite++ ; }
+		}
+
+		return $ite ;
 	}
 
 
@@ -498,6 +592,7 @@ class Condorcet
 		$this->closeCandidatesConfig() ;
 
 			////////
+		$original_input = $vote ;
 
 		// Translate the string if needed
 		if ( is_string($vote) )
@@ -507,11 +602,11 @@ class Condorcet
 
 		// Check array format
 		if ( !is_array($vote) || !$this->checkVoteInput($vote) )
-			{ return self::error(5) ; }
+			{ throw new namespace\CondorcetException( 5, (!is_array($original_input) ? $original_input : null) ) ; }
 
 		// Check tag format
 		if ( is_bool($tag) )
-			{ return self::error(5) ; }
+			{ throw new namespace\CondorcetException(5) ; }
 
 		// Sort
 		ksort($vote);
@@ -622,7 +717,7 @@ class Condorcet
 			// Vote identifiant
 			if ($tag !== null)
 			{
-				$vote_r['tag'] = explode(',',$tag) ;
+				$vote_r['tag'] = $this->tagsConvert($tag) ;
 			}
 			
 			$vote_r['tag'][] = $this->_nextVoteTag++ ;
@@ -641,38 +736,134 @@ class Condorcet
 
 			//////
 
+		// Prepare Tags
+		$tag = $this->tagsConvert($tag) ;
+
+		// Deleting
+
 		$effective = 0 ;
 
-		foreach ($this->_Votes as $key => $value)
+		foreach ($this->getVotesList($tag, $with) as $key => $value)
 		{
-			if ($with)
-			{
-				if (in_array($tag, $value['tag']))
-				{
-					unset($this->_Votes[$key]) ;
-					$effective++ ;
-				}
-			}
-			else
-			{
-				if (!in_array($tag, $value['tag'],true))
-				{
-					unset($this->_Votes[$key]) ;
-					$effective++ ;
-				}
-			}
+			unset($this->_Votes[$key]) ;
+			$effective++ ;
 		}
 
 		return $effective ;
 	}
 
 
+	public function jsonVotes ($input)
+	{
+		$input = $this->prepareJson($input);
+		if ($input === false) { return $input ; }
+
+			//////
+
+		$count = 0 ;
+
+		foreach ($input as $record)
+		{
+			if (empty($record['vote']))
+				{ continue ; }
+
+			$tags = (!isset($record['tag'])) ? null : $record['tag'] ;
+			$multi = (!isset($record['multi'])) ? 1 : $record['multi'] ;
+
+			for ($i = 0 ; $i < $multi ; $i++)
+			{
+				if (self::$_max_parse_iteration !== null && $count >= self::$_max_parse_iteration)
+				{
+					throw new namespace\CondorcetException(12, self::$_max_parse_iteration);
+				}
+
+				if ( $this->addVote($record['vote'], $tags) )
+					{ $count++; }
+			}
+		}
+
+		return ($count === 0) ? false : $count ;
+	}
+
+	public function parseVotes ($input, $allowFile = true)
+	{
+		$input = $this->prepareParse($input, $allowFile) ;
+		if ($input === false) { return $input ; }
+
+		// Check each lines
+		$ite = 0 ;
+		foreach ($input as $line)
+		{
+			// Empty Line
+			if (empty($line)) { continue ; }
+
+			// Multiples
+			$is_multiple = strpos($line, '*') ;
+			if ($is_multiple !== false)
+			{
+				$multiple = trim( substr($line, $is_multiple + 1) ) ;
+
+				// Errors
+				if ( !is_numeric($multiple) )
+				{ 
+					throw new namespace\CondorcetException(13, null);
+				}
+
+				$multiple = intval($multiple) ;
+				$multiple = floor($multiple) ;
+
+
+				// Reformat line
+				$line = substr($line, 0, $is_multiple) ;
+			}
+			else
+				{ $multiple = 1 ; }
+
+			// Tags + vote
+			if (strpos($line, '||') !== false)
+			{
+				$data = explode('||', $line);
+
+				$vote = $data[1] ;
+				$tags = $data[0] ;
+			}
+			// Vote without tags
+			else
+			{
+				$vote = $line ;
+				$tags = null ;
+			}
+
+			// addVote
+			for ($i = 0 ; $i < $multiple ; $i++)
+			{
+				if (self::$_max_parse_iteration !== null && $ite >= self::$_max_parse_iteration)
+				{
+					throw new namespace\CondorcetException(12, self::$_max_parse_iteration);
+				}
+
+				if ($this->addVote($vote, $tags))
+					{ $ite++ ; }
+			}
+		}
+
+		return $ite ;
+	}
+
+
 	//:: VOTING TOOLS :://
 
 	// How many votes are registered ?
-	public function countVotes ()
+	public function countVotes ($tag = null, $with = true)
 	{
-		return count($this->_Votes) ;
+		if (!empty($tag))
+		{
+			return count( $this->getVotesList($tag, $with) ) ;
+		}
+		else
+		{
+			return count($this->_Votes) ;
+		}
 	}
 
 	// Get the votes registered list
@@ -684,28 +875,55 @@ class Condorcet
 		}
 		else
 		{
+			$tag = $this->tagsConvert($tag) ;
+
 			$search = array() ;
 
 			foreach ($this->_Votes as $key => $value)
-			{					
-				if ($with)
+			{
+				$noOne = true ;
+				foreach ($tag as $oneTag)
 				{
-					if (in_array($tag, $value['tag'],true))
+					if ( in_array($oneTag, $value['tag'],true) )
 					{
-						$search[$key] = $value ;
+						if ($with)
+						{
+							$search[$key] = $value ;
+							break ;
+						}
+						else
+						{
+							$noOne = false ;
+						}
 					}
 				}
-				else
-				{
-					if (!in_array($tag, $value['tag'],true))
-					{
-						$search[$key] = $value ;
-					}
-				}
+
+				if (!$with && $noOne)
+					{ $search[$key] = $value ;}
 			}
 
 			return $search ;
 		}
+	}
+
+	protected function tagsConvert ($tags)
+	{		
+		if (empty($tags))
+			{ return null ; }
+
+		// Make Array
+		if (!is_array($tags))
+		{
+			$tags = explode(',', $tags);
+		}
+
+		// Trim tags
+		foreach ($tags as &$oneTag)
+		{
+			$oneTag = trim($oneTag);
+		}
+
+		return $tags ;
 	}
 
 
@@ -715,10 +933,35 @@ class Condorcet
 
 	//:: PUBLIC FUNCTIONS :://
 
-
 	// Generic function for default result with ability to change default object method
-	public function getResult ($method = null, array $options = null)
+	public function getResult ($method = true, array $options = null, $tag = null, $with = true)
 	{
+		// Filter if tag is provided & return
+		if ($tag !== null)
+		{ 
+			$timer_start = microtime(true);
+
+			$filter = new self ($this->_Method) ;
+
+			foreach ($this->getCandidatesList() as $candidate)
+			{
+				$filter->addCandidate($candidate);
+			}
+			foreach ($this->getVotesList($tag, $with) as $vote)
+			{
+				$voteTags = $vote['tag'] ;
+				unset($vote['tag']) ;
+
+				$filter->addVote($vote, $voteTags) ;
+			}
+
+			$this->setTimer($timer_start) ;
+
+			return $filter->getResult($method, $options) ;
+		}
+
+			////// Start //////
+
 		// Method
 		$this->setMethod() ;
 		// Prepare
@@ -726,7 +969,9 @@ class Condorcet
 
 			//////
 
-		if ($method === null)
+		$timer_start = microtime(true);
+
+		if ($method === true)
 		{
 			$this->initResult($this->_Method) ;
 
@@ -740,8 +985,10 @@ class Condorcet
 		}
 		else
 		{
-			return self::error(8,$method) ;
+			throw new namespace\CondorcetException(8,$method) ;
 		}
+
+		$this->setTimer($timer_start) ;
 
 		return $this->humanResult($result) ;
 	}
@@ -790,7 +1037,7 @@ class Condorcet
 			if ( self::isAuthMethod($substitution) )
 				{$algo = $substitution ;}
 			else
-				{return self::error(9,$substitution);}
+				{throw new namespace\CondorcetException(9,$substitution);}
 		}
 		else
 			{$algo = 'Condorcet_Basic';}
@@ -811,7 +1058,7 @@ class Condorcet
 			if ( self::isAuthMethod($substitution) )
 				{$algo = $substitution ;}
 			else
-				{return self::error(9,$substitution);}
+				{throw new namespace\CondorcetException(9,$substitution);}
 		}
 		else
 			{$algo = 'Condorcet_Basic';}
@@ -847,7 +1094,7 @@ class Condorcet
 		}
 		else
 		{
-			return self::error(8) ;
+			throw new namespace\CondorcetException(8) ;
 		}
 
 		if (!is_null($stats))
@@ -883,8 +1130,7 @@ class Condorcet
 		}
 		else
 		{
-			self::error(6) ;
-			return false ;
+			throw new namespace\CondorcetException(6) ;
 		}
 	}
 
@@ -956,6 +1202,8 @@ class Condorcet
 
 	protected function doPairwise ()
 	{		
+		$timer_start = microtime(true);
+
 		$this->_Pairwise = array() ;
 
 		foreach ( $this->_Candidates as $candidate_key => $candidate_id )
@@ -1032,6 +1280,8 @@ class Condorcet
 						) ;
 			}
 		}
+
+		$this->setTimer($timer_start);
 	}
 
 
@@ -1137,4 +1387,50 @@ interface Condorcet_Algo
 {
 	public function getResult($options);
 	public function getStats();
+}
+
+// Custom Exeption
+class CondorcetException extends \Exception
+{
+	protected $_infos ;
+
+	public function __construct ($code = 0, $infos = '')
+	{
+		$this->_infos = $infos ;
+
+		parent::__construct($this->correspondence($code), $code);
+	}
+
+	public function __toString ()
+	{
+		   return __CLASS__ . ": [{$this->code}]: {$this->message} (line: {$this->file}:{$this->line})\n";
+	}
+
+	protected function correspondence ($code)
+	{
+		$error[1] = 'Bad candidate format';
+		$error[2] = 'The voting process has already started';
+		$error[3] = 'This candidate ID is already registered';
+		$error[4] = 'This candidate ID do not exist';
+		$error[5] = 'Bad vote format';
+		$error[6] = 'You need to specify votes before results';
+		$error[7] = 'Your Candidate ID is too long > ' . namespace\Condorcet::MAX_LENGTH_CANDIDATE_ID;
+		$error[8] = 'This method do not exist';
+		$error[9] = 'The algo class you want has not been defined';
+		$error[10] = 'The algo class you want is not correct';
+		$error[11] = 'You try to unserialize an object version older than your actual Class version. This is a problematic thing';
+		$error[12] = 'You have exceeded the number of votes allowed for this method.';
+		$error[13] = 'Formatting error: You do not multiply by a number!';
+		$error[14] = 'parseVote() must take a string (raw or path) as argument';
+		$error[15] = 'Input must be valid Json format';
+
+		if ( array_key_exists($code, $error) )
+		{
+			return $error[$code];
+		}
+		else
+		{
+			return (!is_null($this->_infos)) ? $this->_infos : 'Mysterious Error' ;
+		}
+	}
 }
