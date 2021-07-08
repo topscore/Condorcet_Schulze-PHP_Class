@@ -2,28 +2,74 @@
     "name": "julien-boudry/condorcet",
     "license": "MIT",
     "type": "library",
-    "homepage": "https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class",
-    "description": "Condorcet is a PHP Class to computing many Condorcet voting methods",
+    "homepage": "https://github.com/julien-boudry/Condorcet",
+    "description": "Complete election manager, providing natively many methods of Condorcet : Condorcet basic / Copeland / Dodgson / Kemeny–Young / Minimax / Ranked Pairs / Schulze",
     "authors": [
         {
             "name": "Julien Boudry",
-            "email": "julien.boudry@supinternet.fr",
+            "email": "julien.boudry@gmail.com",
             "homepage": "http://www.julien-boudry.net",
             "role": "Developer"
         }
     ],
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/julien-boudry"
+        },
+        {
+            "type": "bitcoin",
+            "url": "https://blockchair.com/bitcoin/address/bc1qesj74vczsetqjkfcwqymyns9hl6k220dhl0sr9"
+        }
+    ],
     "require": {
-        "php": ">=5.4.3",
-        "ext-mbstring": "*",
-        "ext-ctype": "*"
+        "php": "^8",
+        "ext-json": "*",
+        "symfony/console": ">= 5.1",
+        "symfony/yaml": ">= 5.1"
     },
-     "repositories": [
-         {
-         "type": "vcs",
-         "url": "https://github.com/julien-boudry/Condorcet_Schulze-PHP_Class"
-         }
-     ],
+    "require-dev": {
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*",
+        "phpbench/phpbench": "dev-master",
+        "phpunit/phpunit": "^9 || ^10",
+        "phploc/phploc": "dev-master",
+        "haydenpierce/class-finder": ">= 0.4"
+    },
+    "suggest": {
+        "ext-pdo": "Allow to use database for very large elections.",
+        "ext-pdo_sqlite": "Use sqlite3 bases for very large elections."
+    },
     "autoload": {
-        "psr-0": { "": "lib/" }
+        "psr-4": {
+            "CondorcetPHP\\Condorcet\\": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CondorcetPHP\\Condorcet\\Tests\\": "Tests/lib/",
+            "CondorcetPHP\\Condorcet\\Tests\\Examples\\": "Tests/Examples/",
+            "CondorcetPHP\\Condorcet\\Dev\\CondorcetDocumentationGenerator\\": "Dev/CondorcetDocumentationGenerator/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "scripts-descriptions": {
+        "test": "Run all tests!"
+    },
+    "bin": ["bin/condorcet"],
+    "archive": {
+        "exclude": [
+            "/Benchmarks",
+            "/Dev/",
+            "/Documentation",
+            "/Examples",
+            "/Tests",
+            "condorcet-logo.psd",
+            "phpbench.json.dist",
+            "phpcs.xml.dist",
+            ".travis.yml"
+        ]
     }
 }

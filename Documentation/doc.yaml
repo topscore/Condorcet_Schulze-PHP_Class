@@ -1,0 +1,427 @@
+---
+
+# MULTIPLE CLASS
+
+-
+  class:
+    - Vote
+    - Candidate
+  name: haveLink
+  input:
+    election:
+      text: Condorcet election to check.
+-
+  class:
+    - Candidate
+    - Election
+    - Algo\Pairwise
+    - Result
+    - Vote
+    - Timer\Manager
+    - DataManager\VotesManager
+  name: getObjectVersion
+  input:
+    major:
+      text: |
+        * true will return : '2.0'
+        * false will return : '2.0.0'
+
+
+
+# CLASS CONDORCET
+
+-
+  class: Condorcet
+  name: addMethod
+  input:
+    methodClass:
+      text: |
+        The class name implementing your method. The class name includes the namespace it was declared in (e.g. Foo\Bar).
+
+-
+  class: Condorcet
+  name: getAuthMethods
+  input:
+    basic:
+      text: Include the natural Condorcet base algorithm.
+
+-
+  class: Condorcet
+  name: getMethodClass
+  input:
+    method:
+
+-
+  class: Condorcet
+  name: getVersion
+  input:
+    major:
+      text: |
+        * true will return : '2.0'
+        * false will return : '2.0.0'
+
+-
+  class: Condorcet
+  name: isAuthMethod
+  input:
+    method:
+
+-
+  class: Condorcet
+  name: setDefaultMethod
+  input:
+    method:
+      type: string
+      text: Method Name.
+
+
+# CLASS ELECTION
+
+-
+  class: Election
+  name: addCandidate
+  input:
+    candidate:
+      text: Alphanumeric string or CondorcetPHP\Condorcet\Candidate object. Your candidate name will be trim(). If null, will create for you a new candidate with an automatic name.
+
+
+-
+  class: Election
+  name: addConstraint
+  input:
+    constraintClass:
+      text: A valid class path. Class must extend VoteConstraint class.
+
+
+-
+  class: Election
+  name: addVote
+  input:
+    vote:
+      text: 'String or array representation. Or CondorcetPHP\Condorcet\Vote object. If you not provide yourself Vote object, a new one will be generate for you. '
+    tags:
+      text: String separated by commas or an array. Will add tags to the vote object for you. But you can too add it yourself to Vote object.
+
+
+
+-
+  class: Election
+  name: allowsVoteWeight
+  input:
+    rule:
+      text: New rule.
+
+-
+  class: Election
+  name: canAddCandidate
+  input:
+    candidate:
+      text : String or Condorcet/Vote object.
+
+
+-
+  class: Election
+  name: computeResult
+  input:
+    method:
+      text: |
+        Not requiered for use object default method. Set the string name of the algorithm for use an specific one.
+
+-
+  class: Election
+  name: countVotes
+  input:
+    tags:
+      text: 'Tag into string separated by commas, or an Array.'
+    with:
+      text: Count Votes with this tag ou without this tag.
+
+-
+  class: Election
+  name: getCandidateObjectFromName
+  input:
+    candidateName:
+      text: Candidate name.
+
+-
+  class: Election
+  name: getLoser
+  input:
+    method:
+      text: |
+        *Only if not null :*
+
+        The loser will be provided by an advanced algorithm of an available advanced Condorcet method. For most of them, it will be the same as the Condorcet Marquis there. But if it does not exist, it may be different; and in some cases they may be multiple.
+
+        If null, Natural Condorcet algorithm will be use.
+
+-
+  class: Election
+  name: getResult
+  input:
+    method:
+      text: |
+        Not requiered for use object default method. Set the string name of the algorithm for use an specific one.
+
+
+-
+  class: Election
+  name: isRegisteredCandidate
+  input:
+    candidate:
+      text: |
+        Candidate object or candidate string name. String name can working only if the strict mode is active.
+    strictMode:
+      text: |
+        Search comparaison mode. In strict mode, candidate object are compared strictly and a string input can't match anything.
+        If strict mode is false, the comparaison will be based on name.
+
+-
+  class: Election
+  name: getWinner
+  input:
+    method:
+      text: |
+        *Only if not null :*
+
+        The winner will be provided by an advanced algorithm of an available advanced Condorcet method. For most of them, it will be the same as the Condorcet Marquis there. But if it does not exist, it may be different; and in some cases they may be multiple.
+
+        If null, Natural Condorcet algorithm will be use.
+
+
+-
+  class: Election
+  name: addCandidatesFromJson
+  input:
+    input:
+      text: Json string input.
+
+
+-
+  class: Election
+  name: addVotesFromJson
+  input:
+    input:
+      text: Json string input.
+
+
+-
+  class: Election
+  name: parseCandidates
+  input:
+    input:
+      text: String or valid path to a text file.
+    isFile:
+      text: If true, the input is evalatued as path to text file.
+
+-
+  class: Election
+  name: parseVotes
+  input:
+    input:
+      text: String or valid path to a text file.
+    isFile:
+      text: If true, the input is evalatued as path to text file.
+
+
+-
+  class: Election
+  name: parseVotesWithoutFail
+  input:
+    input:
+      text: String or valid path to a text file.
+    isFile:
+      text: If true, the input is evalatued as path to text file.
+    callBack:
+      text: Callback function to execute after each registered vote.
+
+
+-
+  class: Election
+  name: removeCandidates
+  input:
+    candidates_input:
+      text: |
+          * String matching Candidate Name
+          * CondorcetPHP\Condorcet\Candidate object
+          * Array populated by CondorcetPHP\Condorcet\Candidate
+          * Array populated by string matching Candidate name
+
+
+-
+  class: Election
+  name: setMaxParseIteration
+  input:
+    maxParseIterations:
+      text: 'Null will deactivate this functionality. Else, enter an integer.'
+
+-
+  class: Election
+  name: setMaxVoteNumber
+  input:
+    maxVotesNumber:
+      text: Null will deactivate this functionality. An integer will fix the limit.
+
+
+-
+  class: Election
+  name: setImplicitRanking
+  input:
+    rule:
+      text: New rule.
+
+-
+  class: Election
+  name: testIfVoteIsValidUnderElectionConstraints
+  input:
+    vote:
+      text: A vote. Not necessarily registered in this election.
+
+
+
+# CLASS CANDIDATE
+
+
+-
+  class: Candidate
+  name: __construct
+  input:
+    name:
+      text: Candidate Name
+
+-
+  class: Candidate
+  name: setName
+  input:
+    name:
+      text: Candidate Name
+
+
+
+# CLASS VOTE
+
+-
+  class: Vote
+  name: __construct
+  input:
+    ranking:
+      text: Equivalent to Vote::setRanking method.
+    tags:
+      text: Equivalent to Vote::addTags method.
+    ownTimestamp:
+      text: Set your own timestamp metadata on Ranking.
+    electionContext:
+      text: Try to convert directly your candidates from sting input" to Candidate object of one election.
+
+
+-
+  class: Vote
+  name: addTags
+  input:
+    tags:
+      text: Tag(s) are non-numeric alphanumeric string. They can be added by string separated by commas or an array.
+
+
+-
+  class: Vote
+  name: removeTags
+  input:
+    tags:
+      text: They can be added by string separated by commas or an array.
+
+
+-
+  class: Vote
+  name: getContextualRanking
+  input:
+    election:
+      text: An election already linked to the Vote.
+
+-
+  class: Vote
+  name: getContextualRankingAsString
+  input:
+    election:
+      text: An election is already linked to Vote.
+
+-
+  class: Vote
+  name: getSimpleRanking
+  input:
+    context:
+      text: An election already linked to the Vote.
+    displayWeight:
+      text: Include or not the weight symbol and value.
+
+-
+  class: Vote
+  name: getWeight
+  input:
+    context:
+      text: An election already linked to the Vote.
+-
+  class: Vote
+  name: removeCandidate
+  input:
+    candidate:
+      text: Candidate object or string.
+
+-
+  class: Vote
+  name: setRanking
+  input:
+    ranking:
+      text: |
+        * Ranking can be add by string like "A > B = C > D" (by candidate string name)
+        * Multidimensionnal array like :
+           ```php
+           array( $candidate1, [$candidate2,$candidate4], $candidate 3 )
+           ```
+        * Multidimensionnal array with string :
+           ```php
+           array( 'candidate1Name', ['candidate2Name','candidate4Name'], 'candidate3Name' )
+           ```
+        * Or combine the 2 last ways.
+
+        Note: You can't use string candidate name if your vote is already linked to an election (by Election::addVote).
+
+    ownTimestamp:
+      text: 'Set your own timestamp metadata on Ranking. Your timestamp must be > than last registered timestamp. Else, an exception will be throw.'
+
+
+-
+  class: Vote
+  name: setWeight
+  input:
+    newWeight:
+      text: |
+        The new vote weight.
+
+
+# CLASS RESULT
+
+-
+  class: Result
+  name: getResultAsArray
+  input:
+    convertToString:
+      text: 'Convert Candidate object to string'
+
+-
+  class: Result
+  name: getWarning
+  input:
+    type:
+      text: 'Filter on a specific warning type code.'
+
+
+# CLASS CONDORCETUTIL
+
+-
+  class: CondorcetUtil
+  name: format
+  input:
+    input:
+      text: All datatype. Like classical var_dump
+    convertObject:
+      text: If true. Will convert Candidate objects into string representation of their name.

@@ -1,1 +1,17 @@
-testing_script/
+lib/Algo/Methods/KemenyYoung-Data/9.data
+lib/Algo/Methods/KemenyYoung-Data/10.data
+
+*.sqlite
+*.clover
+
+# composer
+/vendor/
+/composer.lock
+
+# phpunit
+.phpunit.result.cache
+
+# coverage & others
+build/
+*.phar
+Dev/large.votes
